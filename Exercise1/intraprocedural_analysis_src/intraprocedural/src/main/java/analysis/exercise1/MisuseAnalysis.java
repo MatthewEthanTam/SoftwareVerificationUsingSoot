@@ -52,7 +52,7 @@ public class MisuseAnalysis extends AbstractAnalysis{
 				exprSoot.getArg(0) instanceof StringConstant &&  // Check if the first argument is a String
 				!((StringConstant) exprSoot.getArg(0)).value.equals(correctConvention)) // Check if the first parameter of expression is equal to `AES/GCM/PKCS5Padding`
 				{ 
-					reporter.reportVulnerability(method.getSignature(), unit);
+					reporter.reportVulnerability(method.getSignature(), st);
 				}
 			}
 		}
