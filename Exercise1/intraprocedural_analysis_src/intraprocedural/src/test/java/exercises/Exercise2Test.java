@@ -54,7 +54,7 @@ public class Exercise2Test extends TestSetup {
 						assertEquals("[([$r0], Init)]", result.get(unit).toString());
 					}
 					if (unit instanceof ReturnVoidStmt) {
-						assertEquals("[([$r0], Close)]", result.get(unit).toString());
+						assertEquals("[([$stack2], Close)]", result.get(unit).toString());
 					}
 				}
 			}
@@ -66,7 +66,7 @@ public class Exercise2Test extends TestSetup {
 
 					}
 					if (unit instanceof ReturnVoidStmt) {
-						assertEquals("[([$r0], Close)]", result.get(unit).toString());
+						assertEquals("[([$stack2], Close)]", result.get(unit).toString());
 					}
 				}
 			}
@@ -89,7 +89,7 @@ public class Exercise2Test extends TestSetup {
 
 					}
 					if (unit instanceof ReturnVoidStmt) {
-						assertEquals("[([$r0], Close)]", result.get(unit).toString());
+						assertEquals("[([$stack3], Close)]", result.get(unit).toString());
 					}
 				}
 			}
@@ -121,7 +121,7 @@ public class Exercise2Test extends TestSetup {
 				Map<Unit, Set<FileStateFact>> result = outFacts.get(method);
 				for (Unit unit : result.keySet()) {
 					if (unit instanceof ReturnVoidStmt) {
-						assertEquals("[([$r0], Open)]", result.get(unit).toString());
+						assertEquals("[([$stack2], Open)]", result.get(unit).toString());
 					}
 				}
 			}
