@@ -5,7 +5,6 @@ import java.util.HashSet;
 import analysis.FileStateFact;
 import analysis.ForwardAnalysis;
 import analysis.VulnerabilityReporter;
-import java_cup.lalr_item;
 import soot.jimple.*;
 import soot.*;
 
@@ -18,7 +17,7 @@ public class TypeStateAnalysis extends ForwardAnalysis<Set<FileStateFact>> {
 	@Override
 	protected void flowThrough(Set<FileStateFact> in, Unit unit, Set<FileStateFact> out) {
 		copy(in, out);
-		// CHECKING INIT  
+		prettyPrint(in, unit, out);
 		if (unit instanceof InvokeStmt) {
 			InvokeExpr expression = ((InvokeStmt) unit).getInvokeExpr();
 			if (expression instanceof SpecialInvokeExpr ) {
@@ -28,76 +27,46 @@ public class TypeStateAnalysis extends ForwardAnalysis<Set<FileStateFact>> {
 				if (methodName.equals("<init>")) {
 					Set<Value> stackAndInit = new HashSet<Value>();
 					stackAndInit.add(base);
-					FileStateFact fact= new FileStateFact(stackAndInit, FileState.Init);
-					out.add(fact);
+					FileStateFact FileFact= new FileStateFact(stackAndInit, FileState.Init);
+					out.add(FileFact);
 				}
 			} else if (expression instanceof VirtualInvokeExpr) {
-
+				// Changing state if an open/close statement is called
 				String methodName = ((VirtualInvokeExpr) expression).getMethod().getName();
 				Value base = ((VirtualInvokeExpr) expression).getBase();
 				if (methodName.equals("open")) {
 					for(FileStateFact i : out) {
+						// if File is at state Init/Close File can change to Open (init -> open, close -> open)
 						if (i.containsAlias(base) && (i.getState() == FileState.Init || i.getState() == FileState.Close)) {
 							i.updateState(FileState.Open);
 						}
-							
+					}
+				} else if (methodName.equals("close")) {
+					for(FileStateFact i : out) {
+						// if File is at state Open/Init File can change to Close (init -> close, open -> close)) 
+						if (i.containsAlias(base) && (i.getState() == FileState.Init ||i.getState() == FileState.Open)) {
+							i.updateState(FileState.Close);
 						}
 					}
 				}
 			}
+			// If FileState contains the alias of the right operator then add the alias of the left operator to the FileStateFact
+		} else if (unit instanceof AssignStmt) {
+				for (FileStateFact i: out){
+					if (i.containsAlias(((AssignStmt) unit).getRightOp())) {
+						i.addAlias(((AssignStmt) unit).getLeftOp());
+					}
+				}
+			// If a FileStateFact is still open then report a vulnerability
+		} else if (unit instanceof ReturnVoidStmt) {
+			Stmt stmt = (Stmt) unit;
+			for (FileStateFact i: out){
+				if (i.isOpened()) {
+					reporter.reportVulnerability(method.getName(), stmt);
+				}
+			}
+		}
 		
-
-		// if (unit instanceof InvokeStmt) {
-		// 	InvokeStmt invokeStmt = (InvokeStmt) unit;
-		// 	InvokeExpr expr = invokeStmt.getInvokeExpr();
-		// 	if (expr instanceof SpecialInvokeExpr) {
-		// 		SpecialInvokeExpr specialInvoke = (SpecialInvokeExpr) expr;
-		// 		Value base = specialInvoke.getBase();
-		// 		SootMethod method = specialInvoke.getMethod();
-		// 		if (method.getSignature().equals("<target.exercise2.File: void <init>()>")) {
-		// 			Set<Value> aliases = new HashSet<Value>();
-		// 			aliases.add(base);
-		// 			FileStateFact fact= new FileStateFact(aliases, FileState.Init);
-		// 			out.add(fact);
-		// 		}
-		// 	} else if (expr instanceof VirtualInvokeExpr) {
-		// 		VirtualInvokeExpr virtualInvoke = (VirtualInvokeExpr) expr;
-		// 		Value base = virtualInvoke.getBase();
-		// 		SootMethod method = virtualInvoke.getMethod();
-		// 		if (method.getSignature().equals("<target.exercise2.File: void open()>")) {
-		// 			for (FileStateFact fact:out) {
-		// 				if (fact.containsAlias(base)) {
-		// 					if (fact.getState().equals(FileState.Init) || fact.getState().equals(FileState.Close))
-		// 						fact.updateState(FileState.Open);
-		// 				}
-		// 			}
-		// 		} else if (method.getSignature().equals("<target.exercise2.File: void close()>")) {
-		// 			for (FileStateFact fact: out){
-		// 				if (fact.containsAlias(base)) {
-		// 					if (fact.getState().equals(FileState.Open))
-		// 						fact.updateState(FileState.Close);
-		// 				}
-		// 			}
-		// 		}
-
-		// 	}
-		// } else if (unit instanceof AssignStmt) {
-		// 	AssignStmt assignStmt = (AssignStmt) unit;
-		// 	Value leftOp = assignStmt.getLeftOp();
-		// 	Value rightOp = assignStmt.getRightOp();
-		// 	for (FileStateFact fact: out){
-		// 		if (fact.containsAlias(rightOp)) {
-		// 			fact.addAlias(leftOp);
-		// 		}
-		// 	}
-		// } else if (unit instanceof ReturnVoidStmt) {
-		// 	for (FileStateFact fact: out){
-		// 		if (fact.isOpened()) {
-		// 			reporter.reportVulnerability(this.method.getSignature(), (Stmt) unit);
-		// 		}
-		// 	}
-		// }
-		prettyPrint(in, unit, out);
 	}
 
 	@Override
